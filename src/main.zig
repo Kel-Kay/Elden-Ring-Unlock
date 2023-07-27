@@ -6,12 +6,12 @@ const mod_name = proc_name;
 
 const fps_pattern = [_]?u8{ 0xC7, null, null, null, 0x88, 0x88, 0x3C, 0xEB };
 const hz_pattern = [_]?u8{ 0xEB, null, 0xC7, null, null, 0x3C, 0x00, 0x00, 0x00, 0xC7, null, null, 0x01, 0x00, 0x00, 0x00 };
-const cc_pattern = [_]?u8{ 0x33, 0xC9, 0xFF, 0x15, 0x28, 0xF9, 0xB7, 0x03 };
+const cc_pattern = [_]?u8{ 0x83, 0xF8, 0x01, 0x74, null, 0x33, 0xC9, 0xFF, 0x15, null, null, null, null, 0xEB };
 
 const fps_pattern_offset = 3;
 const hz_pattern_offset_one = 5;
 const hz_pattern_offset_two = 12;
-const cc_pattern_offset = 2;
+const cc_pattern_offset = 7;
 const cc_pattern_inst_length = 6;
 
 const new_cap = 240.0;
