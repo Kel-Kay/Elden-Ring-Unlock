@@ -1,5 +1,6 @@
 ## Elden-Ring-Unlock
 A small tool to make Elden Ring more enjoyable on PC.
+Tested and working with Elden Ring 1.10.
 ### What it does
 - Removes the forced 60 hz refresh rate cap
 - Changes the forced 60 fps cap to 240 fps
