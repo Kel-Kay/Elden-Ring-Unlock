@@ -1,5 +1,5 @@
 ## Elden-Ring-Unlock
-A small tool to make Elden Ring more enjoyable on PC.
+A small tool to make Elden Ring more enjoyable on PC. </br>
 Tested and working with Elden Ring 1.10.
 ### What it does
 - Removes the forced 60 hz refresh rate cap
