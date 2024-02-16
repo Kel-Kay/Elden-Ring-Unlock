@@ -5,6 +5,7 @@ Tested and working with Elden Ring 1.10.
 - Removes the forced 60 hz refresh rate cap
 - Changes the forced 60 fps cap to 240 fps
 - Removes a call to ClipCursor when opening the map (often leading to the cursor jumping monitors and forcing the game out of focus)
+- Hides the center screen compass
 
 ### How to use
 Start the game → start the tool </br>
