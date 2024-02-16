@@ -7,6 +7,8 @@ const proc_name_two = win.L("eldenring.exe");
 const fps_pattern = [_]?u8{ 0xC7, null, null, 0x89, 0x88, 0x88, 0x3C, 0xEB };
 const hz_pattern = [_]?u8{ 0xEB, null, 0xC7, null, null, 0x3C, 0x00, 0x00, 0x00, 0xC7, null, null, 0x01, 0x00, 0x00, 0x00 };
 const cc_pattern = [_]?u8{ 0x83, 0xF8, 0x01, 0x74, null, 0x33, 0xC9, 0xFF, 0x15, null, null, null, null, 0xEB };
+const com_pattern = [_]?u8{ 0x88, 0x91, 0xF0, 0x0F, 0x00, 0x00 };
+const com_overwrite = [_]u8{ 0xC6, 0x81, 0xF0, 0x0F, 0x00, 0x00, 0x00 };
 
 const fps_pattern_offset = 3;
 const hz_pattern_offset_one = 5;
@@ -28,7 +30,7 @@ const failure = error{
     FailedToWriteProcessMemory,
 };
 
-pub fn main() failure!void {
+pub fn main() !void {
     const snapshot = win.CreateToolhelp32Snapshot(win.TH32CS_SNAPPROCESS, 0);
     if (snapshot == win.INVALID_HANDLE_VALUE) return failure.FailedToCreateSnapshot;
     defer _ = win.CloseHandle(snapshot);
@@ -37,7 +39,7 @@ pub fn main() failure!void {
     proc_entry.dwSize = @sizeOf(win.PROCESSENTRY32W);
 
     var opt_proc_id: ?u32 = null;
-    var mod_name : [*:0]const u16 = undefined;
+    var mod_name: [*:0]const u16 = undefined;
 
     if (win.Process32FirstW(snapshot, &proc_entry) == win.TRUE) {
         var has_proc = true;
@@ -69,15 +71,27 @@ pub fn main() failure!void {
     const fps_pattern_ptr = try findPattern(&fps_pattern, mod_copy, mod_size);
     const hz_pattern_ptr = try findPattern(&hz_pattern, mod_copy, mod_size);
     const cc_pattern_ptr = try findPattern(&cc_pattern, mod_copy, mod_size);
+    const com_pattern_ptr = try findPattern(&com_pattern, mod_copy, mod_size);
 
     const fps_pattern_rel = @intFromPtr(fps_pattern_ptr) - @intFromPtr(mod_copy);
     const hz_pattern_rel = @intFromPtr(hz_pattern_ptr) - @intFromPtr(mod_copy);
     const cc_pattern_rel = @intFromPtr(cc_pattern_ptr) - @intFromPtr(mod_copy);
+    const com_pattern_rel = @intFromPtr(com_pattern_ptr) - @intFromPtr(mod_copy);
+
+    var com_b_ptr = @as([*]u8, @ptrCast(com_pattern_ptr));
+    var com_pattern_len: usize = 1;
+    while (com_b_ptr[com_pattern_len - 1] != 0xC3) {
+        com_pattern_len += 1;
+    }
 
     const zero_dword = std.mem.zeroes(u32);
     const nop_array = [_]u8{0x90} ** cc_pattern_inst_length;
 
     var success = win.TRUE;
+
+    success *= win.WriteProcessMemory(proc_handle, @ptrFromInt(@intFromPtr(mod_handle) + com_pattern_rel + 1), com_pattern_ptr, com_pattern_len, null);
+    success *= win.WriteProcessMemory(proc_handle, @ptrFromInt(@intFromPtr(mod_handle) + com_pattern_rel), &com_overwrite, com_overwrite.len, null);
+
     success *= win.WriteProcessMemory(proc_handle, @ptrFromInt(@intFromPtr(mod_handle) + fps_pattern_rel + fps_pattern_offset), &new_frametime, @sizeOf(f32), null);
     success *= win.WriteProcessMemory(proc_handle, @ptrFromInt(@intFromPtr(mod_handle) + hz_pattern_rel + hz_pattern_offset_one), &zero_dword, @sizeOf(u32), null);
     success *= win.WriteProcessMemory(proc_handle, @ptrFromInt(@intFromPtr(mod_handle) + hz_pattern_rel + hz_pattern_offset_two), &zero_dword, @sizeOf(u32), null);
@@ -118,7 +132,7 @@ fn findModule(process_handle: *anyopaque, name: [*:0]const u16) failure!*anyopaq
 
     var name_buffer: [buffer_size:0]u16 = undefined;
 
-    if (success != 0) {
+    if (success == win.TRUE) {
         for (module_data) |optional_module| {
             if (optional_module) |module| {
                 name_buffer = std.mem.zeroes([buffer_size:0]u16);
